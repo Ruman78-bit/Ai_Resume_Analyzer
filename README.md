@@ -1,6 +1,6 @@
 # ResumeIQ — AI Resume Analyzer
 
-Paste resume text and get an ATS score, strengths, weaknesses, keywords found and missing, a top improvement tip, and suggested job roles. The analysis comes from the Claude API.
+Paste resume text and get an ATS score, strengths, weaknesses, keywords found and missing, a top improvement tip, and suggested job roles. The analysis comes from the Gemini API.
 
 ## How it works
 
@@ -20,7 +20,7 @@ The API key stays on the server and is never sent to the browser. Text returned 
 
 - HTML, CSS and JavaScript (no framework)
 - Netlify Functions (Node.js)
-- Anthropic Claude API
+- Gemini API
 
 ## Run it locally
 

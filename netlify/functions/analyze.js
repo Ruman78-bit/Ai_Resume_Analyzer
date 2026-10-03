@@ -72,8 +72,9 @@ exports.handler = async (event) => {
     return json(502, { error: 'Could not reach the AI service' });
   }
 
-  if (!upstream.ok) {
-    console.error('Anthropic API returned', upstream.status);
+   if (!upstream.ok) {
+    const errText = await upstream.text();
+    console.error('Anthropic API returned', upstream.status, errText);
     return json(502, { error: 'The AI service returned an error. Try again later.' });
   }
 

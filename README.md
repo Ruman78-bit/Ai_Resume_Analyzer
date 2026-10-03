@@ -1,25 +1,46 @@
 # ResumeIQ — AI Resume Analyzer
 
-An AI-powered resume analyzer that gives you instant ATS score, strengths, weaknesses, keyword feedback, and role recommendations — built with vanilla HTML, CSS & JavaScript, powered by Claude AI.
+Paste resume text and get an ATS score, strengths, weaknesses, keywords found and missing, a top improvement tip, and suggested job roles. The analysis comes from the Claude API.
 
-## 🔗 Live Demo
-[View Live →](your-netlify-link-here)
+## How it works
 
-## ✦ Features
-- Instant ATS score (0–100) with animated score ring
-- Strengths & weaknesses breakdown
-- Keywords found vs keywords missing
-- Top priority improvement tip
-- Best-fit job roles for your resume
+```
+Browser (index.html)
+  → POST /.netlify/functions/analyze   { "resume": "<text>" }
+  → Netlify Function (netlify/functions/analyze.js)
+       checks length (50–12,000 characters)
+       calls the Anthropic Messages API with the key from an environment variable
+       parses the JSON reply
+  → browser renders the result
+```
 
-## 🛠 Tech Stack
-- HTML5, CSS3, JavaScript (ES6+)
+The API key stays on the server and is never sent to the browser. Text returned by the model is escaped before it is put on the page.
+
+## Tech
+
+- HTML, CSS and JavaScript (no framework)
+- Netlify Functions (Node.js)
 - Anthropic Claude API
 
-## 🚀 How to Use
-1. Clone the repo
-2. Open `index.html` in your browser
-3. Paste your resume text
-4. Hit **Analyze Resume** and get instant feedback
+## Run it locally
 
-## 📁 Project Structure
+Requirements: Node.js 18+, the [Netlify CLI](https://docs.netlify.com/cli/get-started/), and an [Anthropic API key](https://console.anthropic.com/).
+
+```bash
+npm i -g netlify-cli
+echo "ANTHROPIC_API_KEY=your_key_here" > .env
+netlify dev            # http://localhost:8888
+```
+
+## Deploy on Netlify
+
+1. Push this repo to GitHub.
+2. In Netlify: **Add new site → Import an existing project** and pick the repo. Build settings come from `netlify.toml`.
+3. Under **Site configuration → Environment variables**, add `ANTHROPIC_API_KEY`. Optionally add `ANTHROPIC_MODEL` to change the model (default: `claude-haiku-4-5-20251001`).
+4. Redeploy.
+
+## Notes
+
+- The function URL is public, so anyone with the site link can trigger API calls on your key. Set a monthly spend limit on the key in the Anthropic console.
+- Pasted resume text is sent to the Anthropic API. Do not paste anything you do not want processed there.
+- The ATS score is a language-model estimate, not the output of a real applicant tracking system.

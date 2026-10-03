@@ -1,9 +1,6 @@
-// Netlify Function: keeps the Anthropic API key on the server.
-// The browser calls POST /.netlify/functions/analyze with { "resume": "<text>" }.
-
 const MAX_CHARS = 12000;
 const MIN_CHARS = 50;
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
 
 const SYSTEM_PROMPT = `You are an expert resume analyzer and career coach. Analyze the given resume and respond ONLY with a valid JSON object. No preamble, no markdown, no backticks. Just raw JSON.
 
@@ -31,9 +28,9 @@ exports.handler = async (event) => {
     return json(405, { error: 'Method not allowed' });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    console.error('ANTHROPIC_API_KEY is not set');
+    console.error('GEMINI_API_KEY is not set');
     return json(500, { error: 'Server is not configured' });
   }
 
@@ -53,33 +50,34 @@ exports.handler = async (event) => {
 
   let upstream;
   try {
-    upstream = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 1000,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: `Analyze this resume:\n\n${resume}` }],
-      }),
-    });
+    upstream = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          contents: [{ role: 'user', parts: [{ text: `Analyze this resume:\n\n${resume}` }] }],
+          generationConfig: { maxOutputTokens: 2000, responseMimeType: 'application/json' },
+        }),
+      }
+    );
   } catch (err) {
-    console.error('Network error calling Anthropic:', err.message);
+    console.error('Network error calling Gemini:', err.message);
     return json(502, { error: 'Could not reach the AI service' });
   }
 
-   if (!upstream.ok) {
+  if (!upstream.ok) {
     const errText = await upstream.text();
-    console.error('Anthropic API returned', upstream.status, errText);
+    console.error('Gemini API returned', upstream.status, errText);
     return json(502, { error: 'The AI service returned an error. Try again later.' });
   }
 
   const data = await upstream.json();
-  const raw = (data.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('');
+  const raw = (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('');
 
   let result;
   try {

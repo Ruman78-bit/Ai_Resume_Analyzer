@@ -1,46 +1,71 @@
 # ResumeIQ — AI Resume Analyzer
 
-Paste resume text and get an ATS score, strengths, weaknesses, keywords found and missing, a top improvement tip, and suggested job roles. The analysis comes from the Gemini API.
+Paste your resume and get an instant ATS score, strengths, weaknesses, missing keywords, a top tip, and suggested roles — powered by Google's Gemini API.
+
+**Live demo:** https://airesumeanalyzer8.netlify.app/
+
+## Features
+
+- ATS score (0–100) with a quality label and one-line summary
+- Strengths and weaknesses of the resume
+- Keywords found and keywords missing
+- One actionable top tip
+- Suggested roles that fit the resume
 
 ## How it works
 
+1. The browser sends the pasted resume text to a Netlify Function: `POST /.netlify/functions/analyze`.
+2. The function validates the input (50–12,000 characters) and calls the Gemini API with a prompt that requires a fixed JSON structure.
+3. The function parses the model's reply and returns clean JSON.
+4. The front end renders the score, strengths, weaknesses, keywords, tip, and roles.
+
+The API key stays on the server inside the Netlify Function, so it is never exposed in the browser.
+
+## Tech stack
+
+- HTML, CSS, JavaScript (front end)
+- Netlify Functions (Node.js serverless backend)
+- Google Gemini API (AI analysis)
+- Hosted on Netlify, auto-deployed from GitHub
+
+## Project structure
+
 ```
-Browser (index.html)
-  → POST /.netlify/functions/analyze   { "resume": "<text>" }
-  → Netlify Function (netlify/functions/analyze.js)
-       checks length (50–12,000 characters)
-       calls the Anthropic Messages API with the key from an environment variable
-       parses the JSON reply
-  → browser renders the result
-```
-
-The API key stays on the server and is never sent to the browser. Text returned by the model is escaped before it is put on the page.
-
-## Tech
-
-- HTML, CSS and JavaScript (no framework)
-- Netlify Functions (Node.js)
-- Gemini API
-
-## Run it locally
-
-Requirements: Node.js 18+, the [Netlify CLI](https://docs.netlify.com/cli/get-started/), and an [Anthropic API key](https://console.anthropic.com/).
-
-```bash
-npm i -g netlify-cli
-echo "ANTHROPIC_API_KEY=your_key_here" > .env
-netlify dev            # http://localhost:8888
+.
+├── index.html                  # UI and client-side logic
+└── netlify/
+    └── functions/
+        └── analyze.js          # Serverless function that calls Gemini
 ```
 
-## Deploy on Netlify
+## Run it yourself
 
-1. Push this repo to GitHub.
-2. In Netlify: **Add new site → Import an existing project** and pick the repo. Build settings come from `netlify.toml`.
-3. Under **Site configuration → Environment variables**, add `ANTHROPIC_API_KEY`. Optionally add `ANTHROPIC_MODEL` to change the model (default: `claude-haiku-4-5-20251001`).
-4. Redeploy.
+1. Fork or clone this repository.
+2. Get a free API key from [Google AI Studio](https://aistudio.google.com/).
+3. Deploy the repo on [Netlify](https://www.netlify.com/).
+4. In Netlify, go to **Environment variables** and add:
+
+   | Variable | Required | Description |
+   | --- | --- | --- |
+   | `GEMINI_API_KEY` | Yes | Your Gemini API key |
+   | `GEMINI_MODEL` | No | Model name. Defaults to `gemini-3.1-flash-lite` |
+
+5. Trigger a new deploy so the variables take effect.
+
+To test locally, install the [Netlify CLI](https://docs.netlify.com/cli/get-started/), add the variables to a `.env` file, and run `netlify dev`.
+
+## Troubleshooting
+
+- **"The AI service returned an error":** Open Netlify → Functions → `analyze` and read the log. The real error from the API is printed there.
+- **401 / invalid API key:** Check that `GEMINI_API_KEY` is set correctly, has no extra spaces or quotes, and that you redeployed after changing it.
+- **Model not found (404):** Google retires models regularly. Set `GEMINI_MODEL` to a current Flash or Flash-Lite model from AI Studio.
+- **429 / quota exceeded:** The free tier has rate limits. Wait a minute and try again.
 
 ## Notes
 
-- The function URL is public, so anyone with the site link can trigger API calls on your key. Set a monthly spend limit on the key in the Anthropic console.
-- Pasted resume text is sent to the Anthropic API. Do not paste anything you do not want processed there.
-- The ATS score is a language-model estimate, not the output of a real applicant tracking system.
+- This project originally used the Claude API and was moved to Gemini's free tier. Only the API call in `analyze.js` changed; the rest of the app is the same.
+- On Gemini's free tier, Google may use inputs to improve its models, so avoid analyzing other people's private data.
+
+## Author
+
+Built by Mohammed Rouman.
